@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"github.com/tsawler/vigilate/internal/helpers"
 	"net/http"
+	"vigilate/internal/helpers"
 )
 
 // AllHealthyServices lists all healthy services

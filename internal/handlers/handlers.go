@@ -7,14 +7,15 @@ import (
 	"runtime/debug"
 	"strconv"
 
+	"vigilate/internal/config"
+	"vigilate/internal/driver"
+	"vigilate/internal/helpers"
+	"vigilate/internal/models"
+	"vigilate/internal/repository"
+	"vigilate/internal/repository/dbrepo"
+
 	"github.com/CloudyKit/jet/v6"
 	"github.com/go-chi/chi"
-	"github.com/tsawler/vigilate/internal/config"
-	"github.com/tsawler/vigilate/internal/driver"
-	"github.com/tsawler/vigilate/internal/helpers"
-	"github.com/tsawler/vigilate/internal/models"
-	"github.com/tsawler/vigilate/internal/repository"
-	"github.com/tsawler/vigilate/internal/repository/dbrepo"
 )
 
 //Repo is the repository

@@ -2,9 +2,9 @@ package dbrepo
 
 import (
 	"context"
-	"github.com/tsawler/vigilate/internal/models"
 	"log"
 	"time"
+	"vigilate/internal/models"
 )
 
 // AllPreferences returns a slice of preferences

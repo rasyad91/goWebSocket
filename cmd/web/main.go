@@ -2,16 +2,17 @@ package main
 
 import (
 	"encoding/gob"
-	"github.com/alexedwards/scs/v2"
-	"github.com/pusher/pusher-http-go"
-	"github.com/tsawler/vigilate/internal/config"
-	"github.com/tsawler/vigilate/internal/handlers"
-	"github.com/tsawler/vigilate/internal/models"
 	"log"
 	"net/http"
 	"os"
 	"runtime"
 	"time"
+	"vigilate/internal/config"
+	"vigilate/internal/handlers"
+	"vigilate/internal/models"
+
+	"github.com/alexedwards/scs/v2"
+	"github.com/pusher/pusher-http-go"
 )
 
 var app config.AppConfig

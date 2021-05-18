@@ -3,8 +3,9 @@ package main
 import (
 	"net/http"
 
+	"vigilate/internal/handlers"
+
 	"github.com/go-chi/chi"
-	"github.com/tsawler/vigilate/internal/handlers"
 )
 
 func routes() http.Handler {
