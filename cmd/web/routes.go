@@ -63,6 +63,8 @@ func routes() http.Handler {
 		// hosts
 		mux.Get("/host/all", handlers.Repo.AllHosts)
 		mux.Get("/host/{id}", handlers.Repo.Host)
+		mux.Post("/host/{id}", handlers.Repo.PostHost)
+
 	})
 
 	// static files

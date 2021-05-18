@@ -129,10 +129,63 @@ func (repo *DBRepo) AllHosts(w http.ResponseWriter, r *http.Request) {
 
 // Host shows the host add/edit form
 func (repo *DBRepo) Host(w http.ResponseWriter, r *http.Request) {
-	err := helpers.RenderPage(w, r, "host", nil, nil)
+	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+
+	var h models.Host
+	h.ID = id
+	// if id > 0 {
+	// 	//
+	// 	fmt.Println(id)
+	// }
+
+	vars := make(jet.VarMap)
+	vars.Set("host", h)
+
+	err := helpers.RenderPage(w, r, "host", vars, nil)
 	if err != nil {
 		printTemplateError(w, err)
 	}
+}
+
+// PostHost shows the host add/edit form
+func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+	if id > 0 {
+		// get host from database
+		// update host
+		repo.App.Session.Put(r.Context(), "flash", "Host updated")
+		http.Redirect(w, r, fmt.Sprintf("/admin/host/%d", id), http.StatusAccepted)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		log.Println(err)
+		return
+	}
+
+	h := models.Host{
+		HostName:      r.PostFormValue("host_name"),
+		CanonicalName: r.PostFormValue("canonical_name"),
+		URL:           r.PostFormValue("url"),
+		IP:            r.PostFormValue("ip"),
+		IPV6:          r.PostFormValue("ipv6"),
+		Location:      r.PostFormValue("location"),
+		OS:            r.PostFormValue("os"),
+	}
+	active, _ := strconv.Atoi(r.PostFormValue("active"))
+	h.Active = active
+
+	hostID, err := repo.DB.InsertHost(h)
+	fmt.Println(hostID)
+	if err != nil {
+		log.Println(err)
+		helpers.ServerError(w, r, err)
+		return
+	}
+
+	repo.App.Session.Put(r.Context(), "flash", "Host added")
+	url := fmt.Sprintf("/admin/host/%d", hostID)
+	fmt.Println(url)
+	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
 // AllUsers lists all admin users

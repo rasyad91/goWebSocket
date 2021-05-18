@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -27,6 +28,7 @@ const maxJobMaxWorkers = 5
 
 func init() {
 	gob.Register(models.User{})
+	fmt.Println("Gob register")
 	_ = os.Setenv("TZ", "America/Halifax")
 }
 
