@@ -88,8 +88,8 @@ Host
                                 <input id="ip" name="ip" value="{{host.IP}}" type="text" class="form-control">
                             </div>
                             <div class="mb-3">
-                                <label for="ip6" class="form-label">IP Address (v6)</label>
-                                <input id="ip6" name="ip6" value="{{host.IPV6}}" type="text" class="form-control">
+                                <label for="ipv6" class="form-label">IP Address (v6)</label>
+                                <input id="ipv6" name="ipv6" value="{{host.IPV6}}" type="text" class="form-control">
                             </div>
 
                         </div>
@@ -103,7 +103,7 @@ Host
                                 <input id="os" name="os" value="{{host.OS}}" type="text" class="form-control">
                             </div>
                             <div class="form-check form-switch">
-                                <input class="form-check-input" value="{{host.Active}}" type="checkbox" id="active" name="active">
+                                <input class="form-check-input" value="1" {{if host.Active == 1 }} checked {{end}} type="checkbox" id="active" name="active">
                                 <label class="form-check-label" for="active">Active</label>
                             </div>
                         </div>

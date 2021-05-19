@@ -121,8 +121,16 @@ func (repo *DBRepo) PostSettings(w http.ResponseWriter, r *http.Request) {
 
 // AllHosts displays list of all hosts
 func (repo *DBRepo) AllHosts(w http.ResponseWriter, r *http.Request) {
-	err := helpers.RenderPage(w, r, "hosts", nil, nil)
+
+	hosts, err := repo.DB.GetAllHosts()
 	if err != nil {
+		log.Println(err)
+		return
+	}
+	vars := make(jet.VarMap)
+	vars.Set("hosts", hosts)
+
+	if err := helpers.RenderPage(w, r, "hosts", vars, nil); err != nil {
 		printTemplateError(w, err)
 	}
 }
@@ -133,10 +141,16 @@ func (repo *DBRepo) Host(w http.ResponseWriter, r *http.Request) {
 
 	var h models.Host
 	h.ID = id
-	// if id > 0 {
-	// 	//
-	// 	fmt.Println(id)
-	// }
+
+	if id > 0 {
+		host, err := repo.DB.GetHostByID(id)
+		if err != nil {
+			log.Println(err)
+			helpers.ServerError(w, r, err)
+			return
+		}
+		h = host
+	}
 
 	vars := make(jet.VarMap)
 	vars.Set("host", h)
@@ -150,13 +164,7 @@ func (repo *DBRepo) Host(w http.ResponseWriter, r *http.Request) {
 // PostHost shows the host add/edit form
 func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-	if id > 0 {
-		// get host from database
-		// update host
-		repo.App.Session.Put(r.Context(), "flash", "Host updated")
-		http.Redirect(w, r, fmt.Sprintf("/admin/host/%d", id), http.StatusAccepted)
-		return
-	}
+
 	if err := r.ParseForm(); err != nil {
 		log.Println(err)
 		return
@@ -173,19 +181,31 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 	}
 	active, _ := strconv.Atoi(r.PostFormValue("active"))
 	h.Active = active
+	fmt.Println("h.active", h.Active)
 
-	hostID, err := repo.DB.InsertHost(h)
-	fmt.Println(hostID)
-	if err != nil {
-		log.Println(err)
-		helpers.ServerError(w, r, err)
-		return
+	if id > 0 {
+		h.ID = id
+		err := repo.DB.UpdateHost(h)
+		if err != nil {
+			log.Println(err)
+			helpers.ServerError(w, r, err)
+			return
+		}
+		repo.App.Session.Put(r.Context(), "flash", "Host updated")
+	} else {
+		hostID, err := repo.DB.InsertHost(h)
+		if err != nil {
+			log.Println(err)
+			helpers.ServerError(w, r, err)
+			return
+		}
+		id = hostID
+		repo.App.Session.Put(r.Context(), "flash", "Host added")
 	}
 
-	repo.App.Session.Put(r.Context(), "flash", "Host added")
-	url := fmt.Sprintf("/admin/host/%d", hostID)
-	fmt.Println(url)
+	url := fmt.Sprintf("/admin/host/%d", id)
 	http.Redirect(w, r, url, http.StatusSeeOther)
+
 }
 
 // AllUsers lists all admin users
