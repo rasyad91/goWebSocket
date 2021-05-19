@@ -2,7 +2,7 @@ package dbrepo
 
 import (
 	"context"
-	"database/sql"
+	"log"
 	"time"
 	"vigilate/internal/models"
 )
@@ -11,6 +11,12 @@ import (
 func (m *postgresDBRepo) InsertHost(h models.Host) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+	var newID int
+
+	tx, err := m.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return newID, nil
+	}
 
 	query := `insert into hosts 
 				(host_name, canonical_name, url, ip, ipv6, location, os, active, created_at, updated_at)
@@ -18,8 +24,7 @@ func (m *postgresDBRepo) InsertHost(h models.Host) (int, error) {
 				($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			returning id
 			`
-	var newID int
-	err := m.DB.QueryRowContext(ctx, query,
+	if err := tx.QueryRowContext(ctx, query,
 		h.HostName,
 		h.CanonicalName,
 		h.URL,
@@ -30,10 +35,24 @@ func (m *postgresDBRepo) InsertHost(h models.Host) (int, error) {
 		h.Active,
 		time.Now(),
 		time.Now(),
-	).Scan(&newID)
-	if err != nil && err != sql.ErrNoRows {
+	).Scan(&newID); err != nil {
+		log.Println(tx.Rollback())
 		return newID, err
 	}
+
+	stmt := ` insert into host_services (host_id, service_id, active, schedule_number, schedule_unit,
+				last_check, created_at, updated_at, status)
+			values ($1, 1, 0, 3, 'm', $2,$3, $4, 'pending')
+	`
+
+	if _, err := tx.ExecContext(ctx, stmt, newID, time.Now(), time.Now(), time.Now()); err != nil {
+		log.Println(tx.Rollback())
+		return newID, err
+	}
+	if err := tx.Commit(); err != nil {
+		log.Println(err)
+	}
+
 	return newID, nil
 }
 
