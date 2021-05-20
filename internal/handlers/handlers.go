@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -50,8 +51,14 @@ func (repo *DBRepo) AdminDashboard(w http.ResponseWriter, r *http.Request) {
 	vars.Set("no_pending", 0)
 	vars.Set("no_warning", 0)
 
-	err := helpers.RenderPage(w, r, "dashboard", vars, nil)
+	allhosts, err := repo.DB.GetAllHosts()
 	if err != nil {
+		log.Println(err)
+		return
+	}
+	vars.Set("hosts", allhosts)
+
+	if err := helpers.RenderPage(w, r, "dashboard", vars, nil); err != nil {
 		printTemplateError(w, err)
 	}
 }
@@ -205,7 +212,38 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 
 	url := fmt.Sprintf("/admin/host/%d", id)
 	http.Redirect(w, r, url, http.StatusSeeOther)
+}
 
+type serviceJson struct {
+	OK      bool   `json:"ok"`
+	Message string `json:"message"`
+}
+
+func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		log.Println(err)
+	}
+	hostID, _ := strconv.Atoi(r.PostFormValue("host_id"))
+	serviceID, _ := strconv.Atoi(r.PostFormValue("service_id"))
+	active, _ := strconv.Atoi(r.PostFormValue("active"))
+
+	response := serviceJson{
+		OK:      true,
+		Message: "Changes saved",
+	}
+
+	if err := repo.DB.UpdateHostServiceStatus(hostID, serviceID, active); err != nil {
+		log.Println(err)
+		helpers.ServerError(w, r, err)
+		response = serviceJson{
+			OK:      false,
+			Message: "Something went wrong",
+		}
+	}
+
+	out, _ := json.MarshalIndent(response, "", "    ")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(out)
 }
 
 // AllUsers lists all admin users
