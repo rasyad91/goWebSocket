@@ -283,3 +283,75 @@ func (m *postgresDBRepo) UpdateHostServiceStatus(hostID, serviceID, active int) 
 
 	return nil
 }
+
+func (m *postgresDBRepo) GetAllServiceStatusCounts() (pending int, healthy int, warning int, problem int, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	stmt := ` select
+				(select count(id) from host_services where active = 1 and status = 'pending') as pending,
+				(select count(id) from host_services where active = 1 and status = 'healthy') as healthy,
+				(select count(id) from host_services where active = 1 and status = 'warning') as warning,
+				(select count(id) from host_services where active = 1 and status = 'problem') as problem
+			`
+	row := m.DB.QueryRowContext(ctx, stmt)
+	err = row.Scan(&pending, &healthy, &warning, &problem)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (m *postgresDBRepo) GetServicesByStatus(status string) ([]models.HostService, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	stmt := `SELECT
+		hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number, hs.schedule_unit,
+		hs.last_check, hs.status, hs.created_at, hs.updated_at,
+		h.host_name, s.service_name 
+	FROM 
+		host_services hs
+		left join hosts h on (h.id = hs.host_id)
+		left join services s on (s.id = hs.service_id)
+	WHERE 
+		status = $1
+		and hs.active = 1
+	ORDER BY
+		host_name, service_name
+	`
+
+	var hostServices []models.HostService
+
+	rows, err := m.DB.QueryContext(ctx, stmt, status)
+	if err != nil {
+		return hostServices, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var hs models.HostService
+		if err := rows.Scan(
+			&hs.ID,
+			&hs.HostID,
+			&hs.ServiceID,
+			&hs.Active,
+			&hs.ScheduleNumber,
+			&hs.ScheduleUnit,
+			&hs.LastCheck,
+			&hs.Status,
+			&hs.CreatedAt,
+			&hs.UpdatedAt,
+			&hs.HostName,
+			&hs.Service.ServiceName,
+		); err != nil {
+			return nil, err
+		}
+		hostServices = append(hostServices, hs)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return hostServices, nil
+}

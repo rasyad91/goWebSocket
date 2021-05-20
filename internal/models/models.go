@@ -80,4 +80,5 @@ type HostService struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	Service        Service
+	HostName       string
 }
