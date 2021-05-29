@@ -2,7 +2,9 @@
 
 {{block css()}}
 <style>
-
+.pointer {
+    cursor: pointer;
+}
 </style>
 {{end}}
 
@@ -184,7 +186,7 @@ Host
                                         <tr>
                                             <td>
                                                 {{.Service.ServiceName}}
-                                                <span class="badge bg-secondary" href="javascript:void(0);" onclick="checkNow({{.ID}})">
+                                                <span class="badge bg-secondary pointer" href="javascript:void(0);" onclick="checkNow({{.ID}})">
                                                     Check Now
                                                 </span>
                                             </td>
@@ -224,7 +226,7 @@ Host
                                         <tr>
                                             <td>
                                                 {{.Service.ServiceName}}
-                                                <span class="badge bg-secondary" href="javascript:void(0);" onclick="checkNow({{.ID}})">
+                                                <span class="badge bg-secondary pointer" href="javascript:void(0);" onclick="checkNow({{.ID}})">
                                                     Check Now
                                                 </span>
                                             </td>
@@ -265,7 +267,7 @@ Host
                                             <td>
                                                 <span class="{{.Service.Icon}}"></span>
                                                 {{.Service.ServiceName}}
-                                                <span class="badge bg-secondary" href="javascript:void(0);" onclick="checkNow({{.ID}})">
+                                                <span class="badge bg-secondary pointer" href="javascript:void(0);" onclick="checkNow({{.ID}})">
                                                     Check Now
                                                 </span>
                                             </td>
@@ -306,7 +308,7 @@ Host
                                             <td>
                                                 <span class="{{.Service.Icon}}"></span>
                                                 {{.Service.ServiceName}}
-                                                <span class="badge bg-secondary" href="javascript:void(0);" onclick="checkNow({{.ID}})">
+                                                <span class="badge bg-secondary pointer pointer" href="javascript:void(0);" onclick="checkNow({{.ID}}, 'pending')">
                                                     Check Now
                                                 </span>
                                             </td>
@@ -398,8 +400,33 @@ Host
         }
     }
 
-    function checkNow(id) {
-        console.log("Clicked check now" + id);
+    function checkNow(id, oldStatus) {
+        console.log("Clicked check now, id: " + id);
+        fetch(`/admin/perform-check/${id}/${oldStatus}`)
+        .then(res => res.json())
+        .then(data => {
+        if (data.ok) {
+            if (data.old_status !== data.new_status) {
+                attention.toast({
+                    msg: data.message,
+                    icon: "info",
+                    timer: 6000,
+                    showCloseButton: true
+                })           
+            } else {
+                attention.toast({
+                    msg: `Service is still in ${data.old_status} status`,
+                    icon: "info",
+                    timer: 6000,
+                    showCloseButton: true
+                }) 
+            }
+ 
+        } else {
+            errorAlert("Something went wrong");
+        }
+
+        })
     }
 
 </script>
